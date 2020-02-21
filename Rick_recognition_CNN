@@ -1,0 +1,51 @@
+The image data can be found in the directory {data/RickandMorty/data/}. We begin by loading in some images of Rick using the {readJPEG} and {grid.raster} functions.
+
+```{r}
+library(keras)
+library(jpeg)
+library(grid)
+im <- readJPEG("data/RickandMorty/data/AllRickImages/Rick_1.jpg")
+grid::grid.newpage()
+grid.raster(im, interpolate=FALSE, width = 0.5)
+```
+load the data and construct a training, validation, 
+and test set of data. Whilst the package we're using has the ability to specify this on the fly, I prefer 
+to manually seperate out training/test/validation sets, as it makes it easier to later debug when things go wrong. 
+
+First load all *Rick* images and all *not Rick* images from their directory. We can get a list of all the *Rick* and *not Rick* images using {list.files}:
+
+```{r}
+files1 <- list.files(path = "data/RickandMorty/data/AllRickImages/", pattern = "jpg")
+files2 <- list.files(path = "data/RickandMorty/data/AllMortyImages/", pattern = "jpg")
+```
+
+After loading the lsit of files we can see we have $2211$ images of *Rick* and $3046$ images of *not Rick*.
+
+We next preallocate an empty array to store these training images for the *Rick* and *not Rick* images (an array of dimension $5257 \times 90 \times 160 \times 3$):
+
+```{r}
+allX  <- array(0, dim=c(length(files1)+length(files2),dim(im)[1],dim(im)[2],dim(im)[3]))
+```
+
+We can load images using the {readJPEG} function:
+
+```{r}
+for (i in 1:length(files1)){
+  allX[i,1:dim(im)[1],1:dim(im)[2],1:dim(im)[3]] <- readJPEG(paste("data/RickandMorty/data/AllRickImages/", files1[i], sep=""))
+}
+```
+
+Similarly, we can load the *not Rick* images and store in the same array:
+
+```{r}
+for (i in 1:length(files2)){
+  allX[i+length(files1),1:dim(im)[1],1:dim(im)[2],1:dim(im)[3]] <- readJPEG(paste("data/RickandMorty/data/AllMortyImages/", files2[i], sep=""))
+}
+```
+```{r}
+library(reticulate)
+reticulate::use_python('/usr/bin/python3')
+library(kerasR)
+labels <- rbind(matrix(0, length(files1), 1), matrix(1, length(files2), 1))
+allY <- to_categorical(labels, num_classes = 2)
+```
